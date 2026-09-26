@@ -1,4 +1,3 @@
-import edgar
 from edgar import set_identity, Company
 
 _IDENTITY = "Aditya Anand adianand@gmail.com"
@@ -30,7 +29,7 @@ def extract_filing(filing, company):
     return documents
 
 
-def extract_filing_documnets(ticker="AAPL"):
+def extract_filing_documnets(ticker):
     """Fetch latest 10-K/10-Q/8-K filings for `ticker` and extract their items.
 
     All network calls happen here, inside the function, not at import time.

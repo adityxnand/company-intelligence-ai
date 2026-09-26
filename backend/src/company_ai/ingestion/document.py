@@ -1,6 +1,8 @@
 from langchain_core.documents import Document
+from .fetcher import extract_filing_documnets
 
-def create_document(report):
+def create_document(ticker="AAPL"):
+    report = extract_filing_documnets(ticker=ticker)
     document = []
 
     for record in report:
