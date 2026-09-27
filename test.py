@@ -1,57 +1,54 @@
-from sqlalchemy import create_engine, delete, select, exists
-from sqlalchemy.orm import Session
-from backend.src.company_ai.db.models import Base, Company, Document, User, UserSelection
-from backend import get_companies
+from sqlalchemy import create_engine,select, exists
+from backend.src.company_ai.db.models import Base,Document,Company
 
-from backend import create_document,extract_filing_documnets
-from backend.src.company_ai.db.repositories.docuement_repository import add_document, get_document_object
+from backend import extract_filing_documnets
 from backend.src.company_ai.db.repositories.company_repository import search_company_for_ticker
 
-from backend.src.company_ai.db.connection import get_session_lite
+from backend.src.company_ai.db.connection import get_session
+from backend.src.company_ai.db.repositories.company_repository import load_companies
+from backend.src.company_ai.services.ingestion_pipeline import ingest_documents
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # throwaway test database, just a local file
-engine = create_engine("sqlite:///test.db")
+engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(engine)
 
-def delete_all_rows(table):
-    with get_session_lite() as session:
-        session.execute(delete(table))
-    return
+with get_session() as session:
+    stmt = select(exists().where(Company.id.isnot(None)))  # "does at least one company exist?"
+    already_seeded = session.scalar(stmt)
+    if not already_seeded:
+        load_companies(session=session)
 
 
 
-
-companies = get_companies()
-with get_session_lite() as session:
-    company_all = []
-    for company in companies["data"]:
-        company_object = Company(
-            name=company[1],
-            ticker=company[2],
-            cik=company[0]
-        )
-        company_all.append(company_object)
-
-    session.add_all(company_all)
-
-
-# delete_all_rows(Document)
-
-
-with get_session_lite() as session:
+        
+with get_session() as session:
     name = input("Enter company name : ")
     selected_company = search_company_for_ticker(name, session=session)
-    stmt = select(exists().where(Document.company_id == selected_company[0].id))
-    result = session.scalar(stmt)
-    print(result)
-    if not result:
-        document_objects = get_document_object(extract_filing_documnets(selected_company[0].ticker),company_id=selected_company[0].id)
+
+    if not selected_company:
+        print("No matching company found.")
+    else:
         stmt = select(exists().where(Document.company_id == selected_company[0].id))
         result = session.scalar(stmt)
-        print(result)
-        add_document(document_objects,session=session)
-    else:
-        print("This company already exists in database")
 
+        if not result:
+            raw_report_data = extract_filing_documnets(selected_company[0].ticker)
 
+            if not raw_report_data:
+                print(f"{selected_company[0].name} does not have US-domestic 10-K/10-Q/8-K filings available.")
+            else:
+                ingest_documents(session=session, raw_report_data=raw_report_data, company_id=selected_company[0].id)
+        else:
+            print("This company already exists in database")
+
+# def delete_all_rows(table):
+#     with get_session_lite() as session:
+#         session.execute(delete(table))
+#     return
+
+# # delete_all_rows(Document)

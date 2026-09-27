@@ -32,7 +32,8 @@ def extract_filing(filing, company):
 def extract_filing_documnets(ticker):
     """Fetch latest 10-K/10-Q/8-K filings for `ticker` and extract their items.
 
-    All network calls happen here, inside the function, not at import time.
+    Returns an empty list if the company doesn't file these US-domestic
+    forms (e.g. foreign private issuers filing 20-F instead).
     """
     _ensure_identity()
 
@@ -43,6 +44,9 @@ def extract_filing_documnets(ticker):
     latest_10k = filings.filter(form=["10-K"]).latest(1)
     latest_10q = filings.filter(form=["10-Q"]).latest(8)
     latest_8k = filings.filter(form=["8-K"]).latest(6)
+
+    if not (latest_10k and latest_10q and latest_8k):
+        return []
 
     documents = []
 

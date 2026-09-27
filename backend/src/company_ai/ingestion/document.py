@@ -1,13 +1,14 @@
-from langchain_core.documents import Document
-from .fetcher import extract_filing_documnets
+from langchain_core.documents import Document as LCDocuments
+from typing import List, Dict
 
-def create_document(ticker="AAPL"):
-    report = extract_filing_documnets(ticker=ticker)
+# Created for TEST Purposes do not have any uses
+
+def create_document(report:List[Dict])->LCDocuments:
     document = []
 
     for record in report:
         document.append(
-            Document(
+            LCDocuments(
                 page_content=record['text'],
                 metadata={
                     "company": record["company"],
