@@ -1,4 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, ForeignKey
 from datetime import datetime
 
@@ -37,7 +38,7 @@ class Chunk(Base):
     id:Mapped[int] = mapped_column(primary_key=True)
     document_id:Mapped[int] = mapped_column(ForeignKey("documents.id"))
     chunk:Mapped[str] = mapped_column(nullable=False)
-    # vector:Mapped[] TO be added later when i will contect it to postgres now testing of sqlite
+    embedding: Mapped[list[float]] = mapped_column(Vector(384))
 
     document:Mapped["Document"] = relationship(back_populates="chunk")
 

@@ -1,6 +1,7 @@
 from ..db.repositories.docuement_repository import get_document_row
 from ..ingestion.chunker  import create_chunks
 from ..db.repositories.chunk_repository import get_chunk_rows
+from ..embeddings.embeder import embed_texts
 
 
 def ingest_documents(session, raw_report_data:str, company_id:int):
@@ -9,5 +10,6 @@ def ingest_documents(session, raw_report_data:str, company_id:int):
         session.add(doc)
         session.flush()
         pieces = create_chunks(doc.content)
-        chunk_objs = get_chunk_rows(pieces, doc.id)
+        vectors = embed_texts(pieces)
+        chunk_objs = get_chunk_rows(pieces, vectors, doc.id)
         session.add_all(chunk_objs)
