@@ -1,7 +1,8 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy import DateTime, ForeignKey, ARRAY, Integer
 from datetime import datetime
+from typing import Literal
 
 class Base(DeclarativeBase):
     pass
@@ -49,6 +50,7 @@ class User(Base):
     email:Mapped[str] = mapped_column(nullable=False, unique=True)
 
     user_selection:Mapped[list["UserSelection"]]= relationship(back_populates="user")
+    chat_session: Mapped[list["ChatSession"]] = relationship(back_populates="user")
 
 
 
@@ -61,3 +63,31 @@ class UserSelection(Base):
 
     user:Mapped["User"] = relationship(back_populates="user_selection")
     company:Mapped["Company"] = relationship()
+
+
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id:Mapped[int] = mapped_column(primary_key=True)
+    user_id:Mapped[int] = mapped_column(ForeignKey("users.id"))
+    companies:Mapped[list[int]] = mapped_column(ARRAY(Integer))
+    created_at:Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    
+    user:Mapped["User"] = relationship(back_populates="chat_session")
+    messages: Mapped[list["Message"]] = relationship(back_populates="chat_session")
+
+
+class Message(Base):
+    __tablename__ = "messages"
+    
+    id:Mapped[int] = mapped_column(primary_key=True)
+    session_id:Mapped[int] = mapped_column(ForeignKey("chat_sessions.id"))
+    role:Mapped[str] = mapped_column(nullable=False)
+    content:Mapped[str]= mapped_column(nullable=False)
+    created_at:Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+        
+    chat_session: Mapped["ChatSession"] = relationship(back_populates="messages")
+    
+    

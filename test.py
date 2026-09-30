@@ -10,7 +10,10 @@ from backend.src.company_ai.services.ingestion_pipeline import ingest_documents
 from dotenv import load_dotenv
 import os
 
-from backend.src.company_ai.embeddings.embeder import get_embedding_model, embed_texts
+from backend.src.company_ai.embeddings.embeder import embed_texts
+from backend.src.company_ai.retrieval.retriever import retrieve_chunks
+
+from backend.src.company_ai.rag.context_builder import create_context
 
 
 load_dotenv()
@@ -56,7 +59,6 @@ with get_session() as session:
         else:
             print("This company already exists in database")
 
-        print(" ALL SET !")
 
 
 
@@ -77,14 +79,40 @@ essay = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commod
 
 
 
-# vector = embed_texts(chunk)
-# print(len(vector))
-# print(len(vector[0]))
 
 # query = input("Enter Your Query : ")
 # query_vector = embedding_model.embed_query(query)
 
 # print(len(vector))
+
 # print(len(vector[0]))
 # print("\n"*8)
 # print(len(query_vector))
+
+
+from backend.src.company_ai.db.repositories.chat_session_repo import create_chat_session, get_chat_session
+from backend.src.company_ai.db.repositories.users_repo import create_user
+from backend.src.company_ai.db.models import ChatSession
+
+
+user = {"id":3,"company_ids":2,"email":"adianand@gmail.com"}
+
+# with get_session() as session:
+#     create_user(email=user["email"],session=session)
+# with get_session() as session:
+#     chat_session = create_chat_session(user_id=user["id"],session=session,company_id=user["company_ids"])
+#     print(chat_session.id)
+
+with get_session() as session:
+    chat_session=get_chat_session(5, session=session)
+    print(f"Current active chat session id -{chat_session.id} for User {chat_session.user.id}")
+
+
+query = input("ASK ANYTHING about apple : ")
+vector = embed_texts([query])
+
+with get_session() as session:
+    chunks = retrieve_chunks(session=session,embedded_text=vector[0],company_id=2)
+    context = create_context(query, chunks)
+    print(f"\nContext dictory for this query \n\n {context}")
+

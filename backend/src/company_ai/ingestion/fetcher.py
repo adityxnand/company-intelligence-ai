@@ -1,6 +1,10 @@
 from edgar import set_identity, Company
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
-_IDENTITY = "Aditya Anand adianand@gmail.com"
+
+_IDENTITY = os.getenv("IDENTITY")
 _identity_set = False
 
 
